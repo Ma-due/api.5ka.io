@@ -1,0 +1,3 @@
+pip install flask-jwt-extended
+pip install flask-jwt-extended\[asymmetric_crypto\]
+pip install flask
