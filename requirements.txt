@@ -1,3 +1,8 @@
-pip install flask-jwt-extended
-pip install flask-jwt-extended\[asymmetric_crypto\]
-pip install flask
+flask-jwt-extended
+flask-jwt-extended[asymmetric_crypto]
+flask
+flask-smorest
+python-dotenv
+sqlalchemy
+flask-sqlalchemy
+pymysql
