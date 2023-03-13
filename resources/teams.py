@@ -1,8 +1,8 @@
-import uuid
-from flask import request
+from sqlalchemy.exc import SQLAlchemyError, IntegrityError
+from db import db
+from models import TeamModel
 from flask.views import MethodView
 from flask_smorest import Blueprint, abort
-from db import teams
 from schemas import TeamSchema
 
 blp = Blueprint("teams", __name__, description="Operations on teams")
@@ -11,33 +11,31 @@ blp = Blueprint("teams", __name__, description="Operations on teams")
 class Team(MethodView):
     @blp.response(200, TeamSchema)
     def get(self, team_id):
-        try:
-            return teams[team_id]
-        except KeyError:
-            abort(404, message = "Team not found")
+        team = TeamModel.query.get_or_404(team_id)
+        return team
 
     def delete(self, team_id):
-        try:
-            del teams[team_id]
-            return {"message":"Team deleted"}
-        except KeyError:
-            abort(404,message="Team not found")
+        team = TeamModel.query.get_or_404(team_id)
+        db.session.delete(team)
+        db.session.commit()
+        return {"message":"team deleted."}
 
 @blp.route("/team")
 class TeamList(MethodView):
     @blp.response(200, TeamSchema(many=True))
     def get(self):
-      return list(teams.values())
+      return TeamModel.query.all()
 
     @blp.arguments(TeamSchema)
     @blp.response(201, TeamSchema)
     def post(self, team_data):
-        for team in teams.values():
-            if team_data["name"] == team["name"]:
-                abort(400, message="Team alreadt exists")
-
-        team_id = uuid.uuid4().hex
-        team = {"id":team_id, **team_data}
-        teams[team_id] = team
-
+        team = TeamModel(**team_data)
+        try:
+            db.session.add(team)
+            db.session.commit()
+        # unique = true 여서 기존 data가 있으면 에러
+        except IntegrityError:
+            abort(400, message="A Team with that name already exists.")
+        except SQLAlchemyError:
+            abort(500, message="An error occured creating the Team")
         return team
